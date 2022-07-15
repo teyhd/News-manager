@@ -194,17 +194,23 @@ app.post('/edit', function(req, res) {
   let data_arr = req.body.new_date.split(' ');
   let mpunixtime = parseInt((new Date('2022.'+data_arr[1]+'.'+data_arr[0]).getTime() / 1000).toFixed(0))
   console.log(req.body);
-  let news_npath = path.join(news_path,'new',getname(req.body.new_date,req.body.new_head))
+  let news_npath = path.join(news_path,'new',getname(req.body.new_date,req.body.new_head)) //Путь из БД по ID
+  //Проверить есть ли папка с таким именем
   //fs.mkdirSync(news_npath, { recursive: true })
 
-  let main_pic = req.files.mainpic
-  pictures_name.push(path.join("Заставка "+main_pic.name))
-  main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
-    if (err)
-      return res.status(500).send(err); 
-  });
-  let photos = req.files.newsimg;
+  //Блок загрузки фотографий
   try {
+    let main_pic = req.files.mainpic;
+    pictures_name.push(path.join("Заставка "+main_pic.name))
+    main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
+    if (err)
+      return console.log('Ошибка загрузки заставки! Вероятно, было пусто!' +err); 
+     });     
+  } catch (error) {
+    console.log('Ошибка загрузки заставки! Ее не прикрепили!' +error); 
+  }
+  try {
+    let photos = req.files.newsimg;
       if (typeof photos.length != "undefined"){
         photos.forEach(element => {
           //console.log(element);
@@ -231,6 +237,14 @@ app.post('/edit', function(req, res) {
   
   res.redirect('/');
 })
+
+app.get('*', function(req, res){
+  res.render('404', { 
+    url: req.url,
+    title: '404 Not Found',   
+  });
+});
+
 function adddir(name){
 let basedir = __dirname;
 console.log(path.join(basedir,name));
