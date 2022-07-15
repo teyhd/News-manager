@@ -1,0 +1,53 @@
+
+  {{>popup}}
+<h5 class="tiny"> Новости на проверке {{auth}}</h5>
+   <table border="1" class="striped highlight centered">
+        <thead>
+          <tr>
+              <th>ID</th>
+              <th>Дата мероприятия</th>
+              <th>Заголовок</th>
+              <th>Дата создания</th>
+              <th>Автор</th>
+              <th>Статус</th>
+              <th>Замечания</th>
+              <th>Действие</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {{#if content.length}}
+
+            {{#each content}}
+            <tr>
+            <td>{{id}}</td>
+            <td>{{mpdate}}</td>
+            <td>{{head}}</td>
+            <td>{{date}}</td>
+            <td>{{autor}}</td>
+            <td>{{status}}</td>
+            <td>{{comment}}</td>
+            <td><a class="waves-effect waves-light btn" href="/edit?idn={{id}}" >Редактировать</a></td>
+
+            </tr>            
+            {{/each}}
+
+          {{else}}
+          <tr>
+            <td>0</td>
+            <td>00.0</td>
+            <td>Новостей нет. ВЕРОЯТНО, ЭТО ОШИБКА! СООБЩИТЕ</td>
+            <td>00.00 00:00</td>
+            <td>Фамилия Имя</td>
+            <td>0</td>
+            <td>Нет</td>
+            <td><a class="waves-effect waves-light btn">Редактировать</a></td>
+          </tr>
+          {{/if}}
+        </tbody>
+   </table>
+<h5 class="tiny"> Новости, требующие доработку </h5>
+<h5 class="tiny"> Новости на отправку </h5>
+<h5 class="tiny"> Новости, ожидающие публикации </h5>
+<h5 class="tiny"> Опубликованные Новости </h5>
+

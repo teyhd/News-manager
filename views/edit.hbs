@@ -1,0 +1,87 @@
+
+
+<h5 class="tiny">Редактировать новость</h5>
+
+ <div class="row">
+    <form  id="editnews" action="edit?idn={{content.id}}" method="post" enctype="multipart/form-data" class="col s12">
+      <div class="row">
+                <div class="input-field col s12">
+                    <input placeholder="В САНКТ-ПЕТЕРБУРГСКОМ ПАНСИОНЕ ВОСПИТАННИЦ" name="new_head" value="{{content.head}}" id="new_head" type="text" class="validate">
+                    <label for="new_head">Заголовок</label>
+                </div>
+                <div class="input-field col s12">
+                    <textarea placeholder="Оснвоное содержание" name="new_text" id="new_text" class="materialize-textarea">{{content.cont}}</textarea>
+                    <label for="new_text">Содержание новости</label>
+                </div>
+                <div class="input-field col s6">
+                    <input placeholder="Дата мероприятия" value="{{content.mpdate}}" name="new_date" id="mp_date" type="text" class="datepicker">
+                    <label class="active" for="mp_date">Дата</label>
+                </div>
+                <div class="input-field col s6">
+                    <input placeholder="Гришина Елена" value="{{content.autor}}" id="new_auth" name="new_auth" type="text" class="validate">
+                    <label class="active" for="new_auth">Фамилия Имя автора новости</label>
+                </div>
+               <div class="row">
+                    <div class="input-field col s12">
+                        <div class="file-field input-field">
+                        <div class="btn">
+                            <span>Загрузить обложку</span>
+                            <input type="file" name="mainpic">
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path validate" type="text" id="main_pic_name" name="main_pic_name">
+                        </div>
+                        </div>                    
+                    </div>
+                    <div class="input-field col s12">
+                        <div class="file-field input-field">
+                            <div class="btn">
+                                <span>Загрузить</span>
+                                <input type="file" multiple name='newsimg'>
+                            </div>
+                            <div class="file-path-wrapper">
+                                <input class="file-path validate" id="all_pic_name" name="all_pic_name" type="text" placeholder="Загрузите фотографии к новости">
+                            </div>
+                        </div>
+                    </div>
+               </div>
+
+                <div class="row">
+                {{#if content}}
+                        {{#each content.pictures}}
+                            {{#if @index}}
+                             <div class="col s2">                            
+                            {{else}}
+                            <div class="col s2 #64b5f6 blue lighten-5">   
+                            {{/if}}
+                            <img  class="materialboxed responsive-img" width="300" src="{{this}}">
+                                <div class="input-field center">
+                                    <button id="{{this}}" class="delbtnc btn waves-effect waves-light #f44336 red" >Удалить фото
+                                    <i class="material-icons right">delete_forever</i>
+                                    </button>                                    
+                                </div>
+                            </div>     
+                        {{/each}}
+
+                    {{else}}
+
+                    {{/if}}
+                    </div>
+
+                    <div class="col s12 center l12">
+                        <button id="btnorto" class="btn waves-effect waves-light #64b5f6 blue lighten-2" >Проверить орфографию
+                        <i class="material-icons right">format_quote</i>
+                        </button>
+                        <button class="btn waves-effect waves-light" id="create" disabled type="submit" name="action">Редактировать новость
+                        <i class="material-icons right">send</i>
+                        </button>
+                    </div>
+                </div>            
+     </div>
+
+     <input  id="fordel" name="picfordel" type="text" hidden>
+    </form>
+  </div>
+
+
+  

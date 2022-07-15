@@ -1,0 +1,27 @@
+<ul id="dropdown1" class="dropdown-content">
+  <li><a href="/new">Добавить новость</a></li>
+  {{#if auth}}
+  <li><a href="#!">Утвердить новости</a></li>
+  
+  <li class="divider"></li>
+  <li><a href="#!">Странный пункт меню</a></li>
+  {{/if}}
+</ul>
+<nav class="blue darken-4">
+  <div class="nav-wrapper">
+    <a href="/" class="brand-logo center">Менеджер новостей</a>
+    <ul class="right hide-on-med-and-down">
+      <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">Управление<i class="material-icons right">arrow_drop_down</i></a></li>
+      {{#if auth}}
+      <li><a id="sign" name="logout">Выход<i class="tiny material-icons right">account_circle</i></a></li>
+      {{else}}
+      <li><a id="sign" name="login">Вход<i class="tiny material-icons right">account_circle</i></a></li>
+      {{/if}}
+    </ul>
+  </div>
+</nav>   
+<script> 
+$( document ).ready(function () {
+  $(".dropdown-trigger").dropdown();
+})
+</script>    
