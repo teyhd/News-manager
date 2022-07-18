@@ -35,7 +35,7 @@ extname: 'hbs',
 helpers: {
   if_eq: function (a, b, opts) {
       if (a == b){ // Or === depending on your needs
-          console.log(opts);
+         // console.log(opts);
           return opts.fn(this);
        } else
           return opts.inverse(this);
@@ -60,7 +60,7 @@ app.get('/',(req,res)=>{
 try {
    news_resul = dbworker.getallnews();
   news_resul.forEach(element => {
-    if (element.comment == null) {//
+    if (element.comment == null || element.comment =='') {//
       element.comment = 'Замечаний нет';
     }
     element.status = getstatus(element.status)
@@ -255,7 +255,7 @@ function isAuth(req){
 if (req.session.auth){
   return req.session.auth;
 } else 
-  return true; // ПЕРЕПИШИ
+  return false; // ПЕРЕПИШИ
 }
 function curdate(minute){
   minute = (minute < 10) ? '0' + minute : minute;
