@@ -11,6 +11,9 @@ var unixTime = require('unix-time');
 const path = require('path');
 const fs = require('fs-extra');
 
+
+//const dbworker = new db.dbworker();
+
 const test = require('./test.js');
 
 const dox = require('./dox.js');
@@ -20,6 +23,9 @@ const db = require('./db.js');
 const dbworker = new db.dbworker();
 
 const ortog = require('./orthog.js');
+
+const newsclv = require('./newsm.js');
+//const woe = new newsclv.newscl();
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -37,8 +43,8 @@ app.use(fileUpload());
 app.use(session({resave:false,saveUninitialized:false, secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
 
 app.get('/',(req,res)=>{
-  console.log(req.socket.remoteAddress);
-
+  console.log(getcurip(req.socket.remoteAddress));
+ 
   //console.log(dbworker.selectsql(res));
 let auth = isAuth(req);
 //console.log('Cookies: ', req.cookies)
@@ -137,55 +143,45 @@ console.log("Пользователь вышел");
 req.session.auth = false;
 res.send('ok');
 })
-app.post('/upload', function(req, res) {
-if (!req.files || Object.keys(req.files).length === 0) {
-  return res.status(400).send('Произошла ошибка! Обратитесь к разработчику!');
-}
-let pictures_name =[];
-//Дата мероприятия в уникс тайм
-let data_arr = req.body.new_date.split(' ');
-let mpunixtime = parseInt((new Date('2022.'+data_arr[1]+'.'+data_arr[0]).getTime() / 1000).toFixed(0))
-console.log(mpunixtime);
-let news_npath = path.join(news_path,'new',getname(req.body.new_date,req.body.new_head))
-fs.mkdirSync(news_npath, { recursive: true })
-//await fs.promises.mkdir(news_npath, { recursive: true })
-//namew,head,cont
-//doxworker.addnews(req.body.new_head, req.body.new_head, req.body.new_text ,news_npath); //Заменить первое на имя документа
-//adddir(req.files.mainpic.name);
-//console.log(req.body.new_text)
-
-let main_pic = req.files.mainpic
-pictures_name.push(path.join("Заставка "+main_pic.name))
-main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
-  if (err)
-    return res.status(500).send(err); 
-});
-let photos = req.files.newsimg;
-try {
-    if (typeof photos.length != "undefined"){
-      photos.forEach(element => {
-        //console.log(element);
-        pictures_name.push(path.join(element.name))
-        element.mv(path.join(news_npath,element.name), function(err) {
-          if (err)
-            return res.status(500).send(err); 
+app.post('/upload', async function(req, res) {
+  let addnews = new newsclv.newscl();
+  let news_npath = addnews.getdir(req.body.new_date,req.body.new_head);
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send('Произошла ошибка! Обратитесь к разработчику!');
+  }
+  let pictures_name =[];
+  let main_pic = req.files.mainpic
+  pictures_name.push(path.join("Заставка "+main_pic.name))
+  main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
+    if (err)
+      return res.status(500).send(err); 
+  });
+  let photos = req.files.newsimg;
+  try {
+      if (typeof photos.length != "undefined"){
+        photos.forEach(element => {
+          //console.log(element);
+          pictures_name.push(path.join(element.name))
+          element.mv(path.join(news_npath,element.name), function(err) {
+            if (err)
+              return res.status(500).send(err); 
+          });
         });
-      });
-    } else{
-        photos.mv(path.join(news_npath,photos.name), function(err) {
-          pictures_name.push(path.join(photos.name))
-          if (err)
-            return res.status(500).send(err);            
-        });
-    } 
-} catch (error) {
-  console.log('Закрыть дыру с отправкой любыйх файлов');
-}
-
-dbworker.addnews(req.body.new_head, req.body.new_text,req.body.new_auth,0,mpunixtime,unixTime(new Date()),pictures_name,JSON.stringify(news_npath));
-//console.log(main_pic.mimetype); //Переадресация на главную
-//res.render('index',{title: 'Главная'});
-res.redirect('/');
+      } else{
+          photos.mv(path.join(news_npath,photos.name), function(err) {
+            pictures_name.push(path.join(photos.name))
+            if (err)
+              return res.status(500).send(err);            
+          });
+      } 
+  } catch (error) {
+    console.log('Закрыть дыру с отправкой любыйх файлов');
+  }
+  await addnews.add(req.body.new_head, req.body.new_text,req.body.new_auth,0, req.body.new_date,pictures_name);
+ 
+  res.redirect('/');
+  //console.log(main_pic.mimetype); //Переадресация на главную
+  //res.render('index',{title: 'Главная'});
 });
 app.post('/edit', function(req, res) {
   console.log(req.query.idn); // ID database update
@@ -310,5 +306,10 @@ async function start(){
         console.log(e);
     }
 }
-
+function getcurip(str) {
+  let arr = str.split(':');
+  arr = arr[arr.length-1];
+  return arr;
+}
 start();
+

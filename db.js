@@ -1,12 +1,14 @@
 class dbworker {
 
   constructor() {
+      this.testid = 0
       var mysql      = require('mysql');
       this.mydb = mysql.createConnection({
           host     : 'localhost',
           user     : 'teyhd',
           password : '258000',
-          database : 'news'
+          database : 'news',
+          charset : 'utf8mb4_general_ci'
         });
   }
 
@@ -35,14 +37,11 @@ addpict(newsid,pic){
     });   
 }
 
-addnews(head,cont,autor,status,mpdate,date,pictures,path){
+  addnews(head,cont,autor,status,mpdate,date,pictures,path){
   let qur = 'INSERT INTO `news`.`news` (`head`,`cont`,`autor`,`status`,`mpdate`,`date`,`path`) VALUES '+`('${head}','${cont}','${autor}',${status},${mpdate},${date},'${path}');`;
-  // console.log(qur);
-  this.mydb.query(qur,
-  function (error, results, fields) {
+  this.mydb.query(qur, function (error, results, fields) {
       if (error) throw error;
-      //console.log(pictures[0]);
-      pictures.forEach(element => {
+        pictures.forEach(element => {
         addpict(results.insertId,element)
       });
       //console.log('The solution is: ', results.insertId);
