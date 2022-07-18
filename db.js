@@ -27,14 +27,12 @@ module.exports.dbworker = class dbworker {
 
   addpict(newsid,pic){
     let qur = 'INSERT INTO `news`.`pict` (`newsid`,`pict`) VALUES '+`('${newsid}','${pic}');`;
-    // console.log(qur);
     let ans = this.syncSql.mysql(this.sett,qur).data;
     return ans;
   }
 
   dellpict(id,name){
     let qur = `DELETE FROM news.pict WHERE newsid=${id} AND pict='${name}';`;
-    // console.log(qur);
     let ans = this.syncSql.mysql(this.sett,qur).data;
     return ans;
   }
@@ -44,7 +42,21 @@ module.exports.dbworker = class dbworker {
     let ans = this.syncSql.mysql(this.sett,qur).data;
     return ans;
   }
-
+  updatefolder(id,npath){
+    let qur = `UPDATE news.news SET path='${npath}' WHERE id=${id};`
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
+  updatestat(id,status){
+    let qur = `UPDATE news.news SET status=${status} WHERE id=${id};`
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
+  updatecomm(id,comment){
+    let qur = `UPDATE news.news SET comment='${comment}' WHERE id=${id};`
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
 
   addnews(head,cont,autor,status,mpdate,date,pictures,path){
     let qur = 'INSERT INTO `news`.`news` (`head`,`cont`,`autor`,`status`,`mpdate`,`date`,`path`) VALUES '+`('${head}','${cont}','${autor}',${status},${mpdate},${date},'${path}');`;

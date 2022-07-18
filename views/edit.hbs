@@ -10,7 +10,7 @@
                     <label for="new_head">Заголовок</label>
                 </div>
                 <div class="input-field col s12">
-                    <textarea placeholder="Оснвоное содержание" name="new_text" id="new_text" class="materialize-textarea">{{content.cont}}</textarea>
+                    <textarea placeholder="Основное содержание" name="new_text" id="new_text" class="materialize-textarea">{{content.cont}}</textarea>
                     <label for="new_text">Содержание новости</label>
                 </div>
                 <div class="input-field col s6">
@@ -67,7 +67,36 @@
 
                     {{/if}}
                     </div>
-
+                    {{#if auth}}
+                    <p>
+                    <label>
+                        {{#if_eq content.status 2}}
+                        <input id="commentbo" name="statusch" type="radio" value="true" checked   />
+                        {{else}}
+                        <input id="commentbo" name="statusch" type="radio" value="true"   />   
+                        {{/if_eq}}
+                        <span>Утверждаю</span>
+                    </label>
+                    </p>
+                    <p>
+                    <label>
+                        {{#if_eq content.status 1}}
+                        <input id="commentbox" name="statusch" type="radio" value="false" checked/>
+                      {{else}}
+                       <input id="commentbox" name="statusch" type="radio" value="false"/>
+                      {{/if_eq}}
+                        <span>Необходимо доработать</span>
+                    </label>
+                    </p>
+                    {{#if_eq content.status 1}}
+                <div class="input-field col s12" id="combox">
+                    {{else}}
+                <div class="input-field col s12" id="combox" hidden>
+                     {{/if_eq}}
+                    <textarea placeholder="Опишите подробно ваши замечания!" name="new_comm" id="new_comm" class="materialize-textarea">{{content.comment}}</textarea>
+                    <label for="new_comm">Что необходимо исправить?</label>
+                </div>   
+                {{/if}}                 
                     <div class="col s12 center l12">
                         <button id="btnorto" class="btn waves-effect waves-light #64b5f6 blue lighten-2" >Проверить орфографию
                         <i class="material-icons right">format_quote</i>

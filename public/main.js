@@ -10,7 +10,21 @@
       event.preventDefault();
       this.submit();
     });
-
+    $('#commentbox').change(function(){
+      console.log($(this).is(':checked'));
+      if ($(this).is(':checked')){
+        $('#combox').show(100);
+      } else {
+        $('#combox').hide(100);
+      }
+    });    
+    $('#commentbo').change(function(){
+      console.log($(this).is(':checked'));
+      if ($(this).is(':checked')){
+        $('#combox').hide(100);
+      } 
+    });   
+    
     $("#editnews").submit(function( event ) {
       event.preventDefault();
       $("#all_pic_name").val(`${$("#all_pic_name").val()},${getimg()}`);

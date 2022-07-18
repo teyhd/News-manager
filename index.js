@@ -28,9 +28,19 @@ const newsclv = require('./newsm.js');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
+
 const hbs = exphbs.create({
 defaultLayout: 'main',
-extname: 'hbs'
+extname: 'hbs',
+helpers: {
+  if_eq: function (a, b, opts) {
+      if (a == b){ // Or === depending on your needs
+          console.log(opts);
+          return opts.fn(this);
+       } else
+          return opts.inverse(this);
+  }
+}
 });
 
 app.engine('hbs', hbs.engine);
@@ -43,7 +53,7 @@ app.use(session({resave:false,saveUninitialized:false, secret: 'keyboard cat', c
 
 app.get('/',(req,res)=>{
   let news_resul
-  console.log(getcurip(req.socket.remoteAddress));
+  console.log('IP АДРЕС:'+getcurip(req.socket.remoteAddress));
   let auth = isAuth(req);
 //console.log('Cookies: ', req.cookies)
 //console.log('Signed Cookies: ', req.signedCookies)
@@ -60,7 +70,7 @@ try {
   element.mpdate = `${curdate(datemp.getDate())}.${curdate(datemp.getMonth()+1)}`
   });  
 } catch (error) {
-  console.log(error);
+  console.log('Ошибка в 63 строке:'+error);
 }
   res.render('index',{
     title: 'Создание новости',
@@ -114,11 +124,11 @@ app.get('/edit',(req,res)=>{
      content: results,
      path : results.path     
    });
- //  console.log('The solution is: ', results);
+  console.log('The solution is: ', results.status);
  }
 })
 app.get('/auth', function(req, res) {
-  console.log(req.query.pass);
+  console.log('На сервер пришел пароль: '+req.query.pass);
   if (req.query.pass){
     if (req.query.pass == '159'){
       req.session.auth = true;
@@ -178,10 +188,10 @@ app.post('/edit', function(req, res) {
   let Edited = new newsclv.newscl(req.query.idn);
  // console.log(Edited);
   let news_npath = Edited.news_path_n;
-  console.log(news_npath);
-  console.log(req.query.idn); // ID database update
+  console.log('Путь к новости из БД:'+ news_npath);
+  console.log(req.body); // ID database update
   let pictures_name =[];
-  console.log(req.body.picfordel);
+  console.log('фОТО К УДАЛЕНИЮ: '+req.body.picfordel);
   if (req.body.picfordel!=undefined){Edited.delpicture(req.body.picfordel)}
   try {
     let main_pic = req.files.mainpic;
@@ -197,8 +207,6 @@ app.post('/edit', function(req, res) {
     let photos = req.files.newsimg;
       if (typeof photos.length != "undefined"){
         photos.forEach(element => {
-          //console.log(element);
-          pictures_name.push(path.join(element.name))
           element.mv(path.join(news_npath,element.name), function(err) {
             if (err)
               return res.status(500).send(err); 
@@ -214,19 +222,24 @@ app.post('/edit', function(req, res) {
   } catch (error) {
     console.log('Закрыть дыру с отправкой любыйх файлов');
   }
+  dbworker.updatecomm(req.query.idn,req.body.new_comm);
+
+  dbworker.updatestat(req.query.idn,getnumstat(req.body.statusch));
+  
   Edited.head = req.body.new_head
   Edited.cont = req.body.new_text
   Edited.autor = req.body.new_auth
   Edited.mpunixtime = Edited.getmpunixtime(req.body.new_date)
   Edited.mpdate = req.body.new_date
   Edited.pictures = pictures_name
-  console.log(pictures_name);
-  Edited.status = 1
+  console.log('Имя новых фоток? :'+pictures_name);
+  Edited.status = 0
   Edited.save(1)
  // dbworker.addnews(req.body.new_head, req.body.new_text,req.body.new_auth,0,mpunixtime,unixTime(new Date()),pictures_name,JSON.stringify(news_npath));
  // console.log(main_pic.mimetype); 
   //res.render('index',{title: 'Главная'});
  // console.log(Edited);
+ //this.renamefolder()
   res.redirect('/');
 })
 
@@ -237,22 +250,27 @@ app.get('*', function(req, res){
   });
 });
 
-function adddir(name){
-let basedir = __dirname;
-console.log(path.join(basedir,name));
-fs.ensureDirSync(path.join(basedir,name));
-}
+
 function isAuth(req){
 if (req.session.auth){
   return req.session.auth;
 } else 
-  return false;
+  return true; // ПЕРЕПИШИ
 }
 function curdate(minute){
   minute = (minute < 10) ? '0' + minute : minute;
   return minute;
 }
 
+function getnumstat(par) {
+  console.log(typeof par);
+  if (par!=undefined) {
+    if (par=='true') {
+      return 2
+    } else return 1
+  }
+  return 0
+}
 function getstatus(num) {
   let ans = [
     'Ожидает утверждения',
