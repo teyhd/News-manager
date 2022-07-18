@@ -1,15 +1,12 @@
 module.exports.doxwork = class doxwork {
-
     constructor() {
-        this.news_path = 'F:/news/public/news'; // Передавать
         const officegen = require('officegen')
         this.fs = require('fs')
-        this.path = require('path');
-        // Create an empty Word object:
+        this.pathwo = require('path');
         this.docx = officegen('docx')
     }
 
-    addnews(fname,head,cont,path){
+    addnews(fname,head,cont,pathf){
         //this.docx = officegen('docx')
         // Officegen calling this function after finishing to generate the docx document:
         this.docx.on('finalize', function(written) {
@@ -17,7 +14,7 @@ module.exports.doxwork = class doxwork {
             'Finish to create a Microsoft Word document.'
         )
         })
-
+        pathf = JSON.parse(pathf);
         // Officegen calling this function to report errors:
         this.docx.on('error', function(err) {
         console.log(err)
@@ -26,7 +23,8 @@ module.exports.doxwork = class doxwork {
         pObj.addText(head);
         pObj = this.docx.createP()
         pObj.addText(cont);
-        let out = this.fs.createWriteStream(this.path.join(path,fname+'.docx'))
+        console.log(this.pathwo.join(pathf,fname+'.docx'));
+        let out = this.fs.createWriteStream(this.pathwo.join(pathf,fname+'.docx'))
         out.on('error', function(err) {
         console.log(err)
         })

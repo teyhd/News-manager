@@ -22,6 +22,7 @@
     "officegen": "^0.6.5",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
+    "sync-sql": "^1.0.2",
     "unix-time": "^1.0.1",
     "urlencode": "^1.1.0"
   },

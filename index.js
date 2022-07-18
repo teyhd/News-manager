@@ -11,7 +11,6 @@ var unixTime = require('unix-time');
 const path = require('path');
 const fs = require('fs-extra');
 
-
 //const dbworker = new db.dbworker();
 
 const test = require('./test.js');
@@ -43,15 +42,14 @@ app.use(fileUpload());
 app.use(session({resave:false,saveUninitialized:false, secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
 
 app.get('/',(req,res)=>{
+  let news_resul
   console.log(getcurip(req.socket.remoteAddress));
- 
-  //console.log(dbworker.selectsql(res));
-let auth = isAuth(req);
+  let auth = isAuth(req);
 //console.log('Cookies: ', req.cookies)
 //console.log('Signed Cookies: ', req.signedCookies)
-dbworker.selectsql().query('SELECT * FROM news.news;',function (error, results, fields) {
-  if (error) throw error;
-  results.forEach(element => {
+try {
+   news_resul = dbworker.getallnews();
+  news_resul.forEach(element => {
     if (element.comment == null) {//
       element.comment = 'Замечаний нет';
     }
@@ -60,14 +58,15 @@ dbworker.selectsql().query('SELECT * FROM news.news;',function (error, results, 
   let datemp = new Date(element.mpdate*1000);
   element.date = `${curdate(datecreate.getDate())}.${curdate(datecreate.getMonth()+1)} ${curdate(datecreate.getHours())}:${curdate(datecreate.getMinutes())}:${curdate(datecreate.getSeconds())}`;
   element.mpdate = `${curdate(datemp.getDate())}.${curdate(datemp.getMonth()+1)}`
-});
+  });  
+} catch (error) {
+  console.log(error);
+}
   res.render('index',{
     title: 'Создание новости',
     auth: auth,
-    content: results     
+    content: news_resul     
   });
-//  console.log('The solution is: ', results);
-});
 
 })
 app.get('/new',(req,res)=>{
@@ -85,46 +84,38 @@ app.get('/check',(req,res)=>{
 } else res.send({"result":"ok"});*/
 })
 app.get('/edit',(req,res)=>{
- let auth = isAuth(req);
  console.log('ID редактируемой страницы:  '+req.query.idn);
-
- dbworker.selectsql().query(`SELECT * FROM news.news WHERE id=${req.query.idn};`,function (error, results, fields) {
-  results = results[0]
-//  console.log(results);
-  if (error) throw error;
-  if (results==undefined) {
-    res.render('404',{
-      title: 'Новости с таким ID нет',
-      auth: auth,
-    });
-    return 0;
-  } else {
-    results.path = results.path.substring(15)
-    results.path = results.path.slice(0, -1)
-    dbworker.selectsql().query(`SELECT pict FROM news.pict WHERE newsid=${req.query.idn};`,function (error, resuls, fields) {
-      //console.log(resuls);
-      //results.pictures = 'JSON.parse(results.pictures)'
-      results.pictures = resuls
-      for (let j = 0; j < results.pictures.length; j++) {
-        results.pictures[j] = `${results.path}/${results.pictures[j].pict}` ;
-     }
-    })
-    //console.log( results.pictures);
-    let datecreate = new Date(results.date*1000);
-    let datemp = new Date(results.mpdate*1000);
-    results.date = `${curdate(datecreate.getDate())}.${curdate(datecreate.getMonth()+1)} ${curdate(datecreate.getHours())}:${curdate(datecreate.getMinutes())}:${curdate(datecreate.getSeconds())}`;
-    results.mpdate = `${curdate(datemp.getDate())}.${curdate(datemp.getMonth()+1)}`
-  
-    res.render('edit',{
-      title: 'Редактирование новости',
-      auth: auth,
-      content: results,
-      path : results.path     
-    });
-  //  console.log('The solution is: ', results);
-  }
-
-});
+ let auth = isAuth(req);
+ var results = dbworker.getnews(req.query.idn);
+ if (results==undefined) {
+  res.render('404',{
+    title: 'Новости с таким ID нет',
+    auth: auth,
+  });
+  return 0;
+}else {
+  results.path = results.path.substring(15)
+  results.path = results.path.slice(0, -1)
+  let resuls = dbworker.getpic(req.query.idn)
+    //console.log(resuls);
+    //results.pictures = 'JSON.parse(results.pictures)'
+    results.pictures = resuls
+    for (let j = 0; j < results.pictures.length; j++) {
+      results.pictures[j] = `${results.path}/${results.pictures[j].pict}` ;
+   }
+   let datecreate = new Date(results.date*1000);
+   let datemp = new Date(results.mpdate*1000);
+   results.date = `${curdate(datecreate.getDate())}.${curdate(datecreate.getMonth()+1)} ${curdate(datecreate.getHours())}:${curdate(datecreate.getMinutes())}:${curdate(datecreate.getSeconds())}`;
+   results.mpdate = `${curdate(datemp.getDate())}.${curdate(datemp.getMonth()+1)}`
+ 
+   res.render('edit',{
+     title: 'Редактирование новости',
+     auth: auth,
+     content: results,
+     path : results.path     
+   });
+ //  console.log('The solution is: ', results);
+ }
 })
 app.get('/auth', function(req, res) {
   console.log(req.query.pass);
@@ -184,17 +175,14 @@ app.post('/upload', async function(req, res) {
   //res.render('index',{title: 'Главная'});
 });
 app.post('/edit', function(req, res) {
+  let Edited = new newsclv.newscl(req.query.idn);
+ // console.log(Edited);
+  let news_npath = Edited.news_path_n;
+  console.log(news_npath);
   console.log(req.query.idn); // ID database update
   let pictures_name =[];
-  //Дата мероприятия в уникс тайм
-  let data_arr = req.body.new_date.split(' ');
-  let mpunixtime = parseInt((new Date('2022.'+data_arr[1]+'.'+data_arr[0]).getTime() / 1000).toFixed(0))
-  console.log(req.body);
-  let news_npath = path.join(news_path,'new',getname(req.body.new_date,req.body.new_head)) //Путь из БД по ID
-  //Проверить есть ли папка с таким именем
-  //fs.mkdirSync(news_npath, { recursive: true })
-
-  //Блок загрузки фотографий
+  console.log(req.body.picfordel);
+  if (req.body.picfordel!=undefined){Edited.delpicture(req.body.picfordel)}
   try {
     let main_pic = req.files.mainpic;
     pictures_name.push(path.join("Заставка "+main_pic.name))
@@ -226,11 +214,19 @@ app.post('/edit', function(req, res) {
   } catch (error) {
     console.log('Закрыть дыру с отправкой любыйх файлов');
   }
-  
+  Edited.head = req.body.new_head
+  Edited.cont = req.body.new_text
+  Edited.autor = req.body.new_auth
+  Edited.mpunixtime = Edited.getmpunixtime(req.body.new_date)
+  Edited.mpdate = req.body.new_date
+  Edited.pictures = pictures_name
+  console.log(pictures_name);
+  Edited.status = 1
+  Edited.save(1)
  // dbworker.addnews(req.body.new_head, req.body.new_text,req.body.new_auth,0,mpunixtime,unixTime(new Date()),pictures_name,JSON.stringify(news_npath));
  // console.log(main_pic.mimetype); 
   //res.render('index',{title: 'Главная'});
-  
+ // console.log(Edited);
   res.redirect('/');
 })
 
@@ -256,34 +252,7 @@ function curdate(minute){
   minute = (minute < 10) ? '0' + minute : minute;
   return minute;
 }
-function getname(dat,str) {
-  dat = dat.split(' ');
-  dat = dat.join('.');
-  str = str.toLowerCase();
-  let arr = str.split(' ');
-  let keywords = ['санкт-петербургского','санкт-петербур', 'пансион', 'воспитан','санкт', 'пансио'];
-  for (let i = 0; i < arr.length; i++) {
-   if (arr[i].length==1) {
-     //  console.log(arr[i]);
-       arr.splice(i, 1);
-   }
-   keywords.forEach(element => {
-    //console.log(element);
-       let indf = arr[i].indexOf(element)
-       if (indf!=-1) {
-          // console.log("OK" +arr[i] + " " + element); 
-           arr.splice(i, 1);
-       } else {
-          // console.log("NOOK" +arr[i] + " " + element); 
-          // arr.splice(i, i); // начиная с позиции 1, удалить 1 элемент
-       }
-       });
-       
-  }
-  arr.unshift(dat);
-  return arr.join(' ');
-  //console.log(arr);
-}
+
 function getstatus(num) {
   let ans = [
     'Ожидает утверждения',
@@ -297,10 +266,8 @@ function getstatus(num) {
 }
 async function start(){
     try {
-        await dbworker.connect();
         app.listen(PORT,()=> {
           console.log('Сервер менеджера новостей - запущен')
-          dbworker.selectsql();
         })
     } catch (e) {
         console.log(e);

@@ -1,57 +1,57 @@
-class dbworker {
-
+module.exports.dbworker = class dbworker {
   constructor() {
-      this.testid = 0
-      var mysql      = require('mysql');
-      this.mydb = mysql.createConnection({
-          host     : 'localhost',
-          user     : 'teyhd',
-          password : '258000',
-          database : 'news',
-          charset : 'utf8mb4_general_ci'
-        });
+     this.syncSql = require('sync-sql');
+      this.sett = {
+        host     : 'localhost',
+        user     : 'teyhd',
+        password : '258000',
+        database : 'news',
+        charset : 'utf8mb4_general_ci'
+      }
+    }
+
+  getallnews(){
+    let q = `SELECT * FROM news.news;`
+    return this.syncSql.mysql(this.sett,q).data.rows;
   }
 
-  async connect(){
-  try {
-      await mydb.connect();
-      return true;
-  } catch (e) {
-      return false;
-      console.log(e);
+  getpic(id){
+    let q = `SELECT pict FROM news.pict WHERE newsid=${id};`
+    return this.syncSql.mysql(this.sett,q).data.rows;
   }
-}
 
-//mydb.connect()
- selectsql(){
- return this.mydb
-}
+  getnews(id){
+    let q = `SELECT * FROM news.news WHERE id=${id};`
+    return this.syncSql.mysql(this.sett,q).data.rows[0];
+  }
 
-addpict(newsid,pic){
-  let qur = 'INSERT INTO `news`.`pict` (`newsid`,`pict`) VALUES '+`('${newsid}','${pic}');`;
-  // console.log(qur);
-  this.mydb.query(qur,
-  function (error, results, fields) {
-      if (error) throw error;
-    //  console.log('The solution is: ', results);
-    });   
-}
+  addpict(newsid,pic){
+    let qur = 'INSERT INTO `news`.`pict` (`newsid`,`pict`) VALUES '+`('${newsid}','${pic}');`;
+    // console.log(qur);
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
+
+  dellpict(id,name){
+    let qur = `DELETE FROM news.pict WHERE newsid=${id} AND pict='${name}';`;
+    // console.log(qur);
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
+
+  updatenews(id,head,cont,autor,status,mpdate,path){
+    let qur = `UPDATE news.news SET head='${head}', cont='${cont}', autor='${autor}' ,status=${status}, mpdate=${mpdate}, path='${path}' WHERE id=${id};`
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    return ans;
+  }
+
 
   addnews(head,cont,autor,status,mpdate,date,pictures,path){
-  let qur = 'INSERT INTO `news`.`news` (`head`,`cont`,`autor`,`status`,`mpdate`,`date`,`path`) VALUES '+`('${head}','${cont}','${autor}',${status},${mpdate},${date},'${path}');`;
-  this.mydb.query(qur, function (error, results, fields) {
-      if (error) throw error;
-        pictures.forEach(element => {
-        addpict(results.insertId,element)
+    let qur = 'INSERT INTO `news`.`news` (`head`,`cont`,`autor`,`status`,`mpdate`,`date`,`path`) VALUES '+`('${head}','${cont}','${autor}',${status},${mpdate},${date},'${path}');`;
+    let ans = this.syncSql.mysql(this.sett,qur).data;
+    pictures.forEach(element => {
+      this.addpict(ans.rows.insertId,element)
       });
-      //console.log('The solution is: ', results.insertId);
-    });       
-}
-}
-class dbwokerexp{}
-dbwokerexp = dbworker
-module.exports.dbworker = dbwokerexp
-  const dbwoker = new dbworker();
-  function addpict(newsid,pic){
-    dbwoker.addpict(newsid,pic)
+    return ans.rows.insertId;
   }
+}
