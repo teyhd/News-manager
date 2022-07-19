@@ -99,11 +99,10 @@ module.exports.newscl = class newscl{
 
     edit(){
         //Удалить фото
-        //console.log(this.pictures);
-
-
+        console.log(this.pictures);
         const dbworker = new this.db.dbworker(); 
         this.pictures.forEach(element => {
+            console.log('/n/n'+element+'/n/n');
             dbworker.addpict(this.id,element)
             });
         this.deldocx(this.news_path_n)
@@ -143,7 +142,6 @@ module.exports.newscl = class newscl{
     save(par){
     const dbworker = new this.db.dbworker();  
     const doxworker = new this.dox.doxwork();
-
     try {
         this.news_path_n = JSON.stringify(this.news_path_n)
         this.getname(this.mpdate,this.head)

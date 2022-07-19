@@ -1,5 +1,5 @@
 process.on('uncaughtException', (err) => {
-  console.log('Глобальный косяк приложения!!! ', err.stack);
+  log('Глобальный косяк приложения!!! ', err.stack);
 }); //Если все пошло по пизде, спасет ситуацию
 const news_path = 'F:/news/public/news';
 const express = require('express');
@@ -35,7 +35,7 @@ extname: 'hbs',
 helpers: {
   if_eq: function (a, b, opts) {
       if (a == b){ // Or === depending on your needs
-         // console.log(opts);
+         // log(opts);
           return opts.fn(this);
        } else
           return opts.inverse(this);
@@ -48,15 +48,20 @@ app.set('view engine', 'hbs');
 app.set('views','views');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
-app.use(fileUpload());
+//app.use(fileUpload());
 app.use(session({resave:false,saveUninitialized:false, secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
+app.use(fileUpload({
+  defCharset: 'utf8',
+  defParamCharset: 'utf8'
+}));
 
 app.get('/',(req,res)=>{
   let news_resul
-  console.log('IP АДРЕС:'+getcurip(req.socket.remoteAddress));
   let auth = isAuth(req);
-//console.log('Cookies: ', req.cookies)
-//console.log('Signed Cookies: ', req.signedCookies)
+  log('IP:'+getcurip(req.socket.remoteAddress),'Авторизован:',auth);
+  
+//log('Cookies: ', req.cookies)
+//log('Signed Cookies: ', req.signedCookies)
 try {
    news_resul = dbworker.getallnews();
   news_resul.forEach(element => {
@@ -70,7 +75,7 @@ try {
   element.mpdate = `${curdate(datemp.getDate())}.${curdate(datemp.getMonth()+1)}`
   });  
 } catch (error) {
-  console.log('Ошибка в 63 строке:'+error);
+  log('Ошибка в 63 строке:'+error);
 }
   res.render('index',{
     title: 'Создание новости',
@@ -88,13 +93,13 @@ let auth = isAuth(req);
 })
 app.get('/check',(req,res)=>{
  ortog.test(res,req.query.text)
-//console.log(result);
+//log(result);
 /*if (typeof result != "undefined"){
   res.send({"result":req.query.text});
 } else res.send({"result":"ok"});*/
 })
 app.get('/edit',(req,res)=>{
- console.log('ID редактируемой страницы:  '+req.query.idn);
+ log('ID редактируемой страницы:  '+req.query.idn);
  let auth = isAuth(req);
  var results = dbworker.getnews(req.query.idn);
  if (results==undefined) {
@@ -107,7 +112,7 @@ app.get('/edit',(req,res)=>{
   results.path = results.path.substring(15)
   results.path = results.path.slice(0, -1)
   let resuls = dbworker.getpic(req.query.idn)
-    //console.log(resuls);
+    //log(resuls);
     //results.pictures = 'JSON.parse(results.pictures)'
     results.pictures = resuls
     for (let j = 0; j < results.pictures.length; j++) {
@@ -124,11 +129,11 @@ app.get('/edit',(req,res)=>{
      content: results,
      path : results.path     
    });
-  console.log('The solution is: ', results.status);
+  log('The solution is: ', results.status);
  }
 })
 app.get('/auth', function(req, res) {
-  console.log('На сервер пришел пароль: '+req.query.pass);
+  log('На сервер пришел пароль: '+req.query.pass);
   if (req.query.pass){
     if (req.query.pass == '159'){
       req.session.auth = true;
@@ -140,90 +145,66 @@ app.get('/auth', function(req, res) {
   res.send('nok');
 })
 app.get('/logout', function(req, res) {
-console.log("Пользователь вышел");
+log("Пользователь вышел");
 req.session.auth = false;
 res.send('ok');
 })
+
 app.post('/upload', async function(req, res) {
   let addnews = new newsclv.newscl();
   let news_npath = addnews.getdir(req.body.new_date,req.body.new_head);
   if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('Произошла ошибка! Обратитесь к разработчику!');
+    return res.status(400).send('Для создания новости необходимы фотографии!! Вернитесь и прикрепите фото!');
   }
-  let pictures_name =[];
-  let main_pic = req.files.mainpic
-  pictures_name.push(path.join("Заставка "+main_pic.name))
-  main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
-    if (err)
-      return res.status(500).send(err); 
-  });
-  let photos = req.files.newsimg;
-  try {
-      if (typeof photos.length != "undefined"){
-        photos.forEach(element => {
-          //console.log(element);
-          pictures_name.push(path.join(element.name))
-          element.mv(path.join(news_npath,element.name), function(err) {
-            if (err)
-              return res.status(500).send(err); 
-          });
-        });
-      } else{
-          photos.mv(path.join(news_npath,photos.name), function(err) {
-            pictures_name.push(path.join(photos.name))
-            if (err)
-              return res.status(500).send(err);            
-          });
-      } 
-  } catch (error) {
-    console.log('Закрыть дыру с отправкой любыйх файлов');
-  }
+   let pictures_name =[];
+   pictures_name = download(news_npath,req.files.mainpic,true);
+   if (!pictures_name) {
+    log('Не прикрепили заставку');
+    res.status(400).send('Для создания новости необходима главная фотография!! Вернитесь и прикрепите фото!');
+  } 
+
+   allphotoarr = download(news_npath,req.files.newsimg);
+  if (allphotoarr!=false) {
+    pictures_name = pictures_name.concat(allphotoarr);
+  } else log('Не прикрепили фотографии') 
+
   await addnews.add(req.body.new_head, req.body.new_text,req.body.new_auth,0, req.body.new_date,pictures_name);
  
   res.redirect('/');
-  //console.log(main_pic.mimetype); //Переадресация на главную
+  //log(main_pic.mimetype); //Переадресация на главную
   //res.render('index',{title: 'Главная'});
 });
 app.post('/edit', function(req, res) {
   let Edited = new newsclv.newscl(req.query.idn);
- // console.log(Edited);
+  log('Редактируют новость: '+ req.query.idn);
   let news_npath = Edited.news_path_n;
-  console.log('Путь к новости из БД:'+ news_npath);
-  console.log(req.body); // ID database update
-  let pictures_name =[];
-  console.log('фОТО К УДАЛЕНИЮ: '+req.body.picfordel);
+  log('Путь к новости из БД:'+ news_npath);
+  //log(req.body); // ID database update
+  log('фОТО К УДАЛЕНИЮ: '+req.body.picfordel);
   if (req.body.picfordel!=undefined){Edited.delpicture(req.body.picfordel)}
+  let pictures_name =[];
+  let main_pic = undefined 
+  let photos = undefined 
   try {
-    let main_pic = req.files.mainpic;
-    pictures_name.push(path.join("Заставка "+main_pic.name))
-    main_pic.mv(path.join(news_npath,"Заставка "+main_pic.name), function(err) {
-    if (err)
-      return console.log('Ошибка загрузки заставки! Вероятно, было пусто!' +err); 
-     });     
+   main_pic = req.files.mainpic
+   photos = req.files.newsimg
   } catch (error) {
-    console.log('Ошибка загрузки заставки! Ее не прикрепили!' +error); 
+    log(error)
   }
-  try {
-    let photos = req.files.newsimg;
-      if (typeof photos.length != "undefined"){
-        photos.forEach(element => {
-          element.mv(path.join(news_npath,element.name), function(err) {
-            if (err)
-              return res.status(500).send(err); 
-          });
-        });
-      } else{
-          photos.mv(path.join(news_npath,photos.name), function(err) {
-            pictures_name.push(path.join(photos.name))
-            if (err)
-              return res.status(500).send(err);            
-          });
-      } 
-  } catch (error) {
-    console.log('Закрыть дыру с отправкой любыйх файлов');
-  }
-  dbworker.updatecomm(req.query.idn,req.body.new_comm);
 
+    pictures_name = download(news_npath,main_pic,true);
+    if (!pictures_name) {
+      log('Не прикрепили заставку');
+      pictures_name = []
+    // res.status(400).send('Для создания новости необходима главная фотография!! Вернитесь и прикрепите фото!');
+    }
+  
+   allphotoarr = download(news_npath,photos);
+  if (allphotoarr!=false) {
+    pictures_name = pictures_name.concat(allphotoarr);
+  } else log('Не прикрепили фотографии') 
+
+  dbworker.updatecomm(req.query.idn,req.body.new_comm);
   dbworker.updatestat(req.query.idn,getnumstat(req.body.statusch));
   
   Edited.head = req.body.new_head
@@ -232,13 +213,13 @@ app.post('/edit', function(req, res) {
   Edited.mpunixtime = Edited.getmpunixtime(req.body.new_date)
   Edited.mpdate = req.body.new_date
   Edited.pictures = pictures_name
-  console.log('Имя новых фоток? :'+pictures_name);
+  log('Имя новых фоток? :'+pictures_name);
   Edited.status = 0
   Edited.save(1)
  // dbworker.addnews(req.body.new_head, req.body.new_text,req.body.new_auth,0,mpunixtime,unixTime(new Date()),pictures_name,JSON.stringify(news_npath));
- // console.log(main_pic.mimetype); 
+ // log(main_pic.mimetype); 
   //res.render('index',{title: 'Главная'});
- // console.log(Edited);
+ // log(Edited);
  //this.renamefolder()
   res.redirect('/');
 })
@@ -250,7 +231,40 @@ app.get('*', function(req, res){
   });
 });
 
+function getformat(name){
+  let arr = name.split('.');
+  return arr[arr.length-1]
+}
 
+function download(news_npath,photos,main=false) {
+  let pictures_name = []
+  try {
+    if (typeof photos.length != "undefined"){
+      photos.forEach(element => {
+        pictures_name.push(path.join(element.name))
+        element.mv(path.join(news_npath,element.name), function(err) {
+          if (err)
+            return res.status(500).send(err); 
+        });
+      });
+    } else{
+         if (main){
+          photos.name = `main.${getformat(photos.name)}`;
+          log(main)
+         }
+        photos.mv(path.join(news_npath,photos.name), function(err) {
+          pictures_name.push(path.join(photos.name))
+          if (err)
+            return res.status(500).send(err);            
+        });
+    } 
+} catch (error) {
+  log('Закрыть дыру с отправкой любыйх файлов');
+  return false
+}
+log("Загружены фотки",pictures_name)
+return pictures_name
+}
 function isAuth(req){
 if (req.session.auth){
   return req.session.auth;
@@ -263,7 +277,7 @@ function curdate(minute){
 }
 
 function getnumstat(par) {
-  console.log(typeof par);
+  log(typeof par);
   if (par!=undefined) {
     if (par=='true') {
       return 2
@@ -285,10 +299,10 @@ function getstatus(num) {
 async function start(){
     try {
         app.listen(PORT,()=> {
-          console.log('Сервер менеджера новостей - запущен')
+          log('Сервер менеджера новостей - запущен')
         })
     } catch (e) {
-        console.log(e);
+        log(e);
     }
 }
 function getcurip(str) {
@@ -298,3 +312,13 @@ function getcurip(str) {
 }
 start();
 
+function log(par) {
+  let datecreate = new Date();
+  let texta = `${curdate(datecreate.getHours())}:${curdate(datecreate.getMinutes())}:${curdate(datecreate.getSeconds())}`;
+  let obj = log.arguments;
+
+  for (const key in obj) {
+    texta = `${texta} ${obj[key]}`
+  } 
+  console.log(texta);
+}
