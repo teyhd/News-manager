@@ -60,7 +60,7 @@ app.get('/',(req,res)=>{
 try {
    news_resul = dbworker.getallnews();
   news_resul.forEach(element => {
-    if (element.comment == null || element.comment =='') {//
+    if (element.comment == null || element.comment =='' || element.comment == 'undefined') {//
       element.comment = 'Замечаний нет';
     }
     element.status = getstatus(element.status)
